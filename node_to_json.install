@@ -1,0 +1,25 @@
+<?php
+
+/**
+ * @file
+ * Setting & removing all custom variables.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function node_to_json_install() {
+  // Default value of some custom varibles.
+  variable_set('siteapikey', NULL);
+  
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function node_to_json_uninstall() {
+  // Removing all custom varible.
+  variable_del('siteapikey');
+  
+}
+

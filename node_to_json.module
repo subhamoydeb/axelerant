@@ -1,0 +1,119 @@
+<?php
+
+/**
+ * @file
+ * Conver given Node to Json using api key.
+ * @auther : Subhamoy Deb.
+ */
+
+/**
+ * Implements hook_help().
+ */
+function node_to_json_help($path) {
+  if ($path == 'admin/help#facebook_wall') {
+    $help = '<p>' . t("This module allows you to Conver given Node to Json using api key.") . '</p><p>' . l(t('Create or change your key API'), 'admin/config/system/site-information') . '</p>';
+    return $help;
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function node_to_json_menu() {
+
+  $menu['page_json/%'] = array(
+      'title' => 'Node to Json',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('_node_to_json_converter'),
+      'access callback' => TRUE,
+      'type' => MENU_CALLBACK,
+  );
+  
+  return $menu;
+}
+
+/**
+ * Converter given node to its json value.
+ */
+function _node_to_json_converter() {
+
+  $arg = arg();
+  $access = FALSE;
+  
+  // for URL page_json only
+  if ($arg[0] == 'page_json' && $arg[1] != NULL && is_numeric($arg[1])) {
+
+    if (variable_get('siteapikey') != '' and variable_get('siteapikey') != NULL ) {
+
+      if ($node = node_load ($arg[1]) ) {
+
+        // Should be 'Page' content type only and should be published.
+        if ( $node->type == 'page' && ($node->status ==1) ) {
+
+		  // Display JSON data of given node
+		  print json_encode($node);
+		  $access = TRUE;
+	      exit;
+        }		
+      }
+    }
+  }
+
+  // 'Access Denied'.
+  if ( $access == FALSE) {
+	 //print 'Access Denied';  
+	 drupal_set_message('Access Denied' , 'error');
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function node_to_json_form_alter(&$form, &$form_state, $form_id) {
+
+  if ( $form_id == 'system_site_information_settings' ) {
+
+    $form['web_service'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Web Services'),
+      '#collapsible' => FALSE,
+      '#collapsed' => FALSE,
+    );
+   
+    // Textbox for API secret key
+    $form['web_service']['siteapikey'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Site API Key'),
+      '#default_value' => variable_get('siteapikey', 'No API Key yet'),
+      '#description' => t('Enter your API secret key here.'),
+      '#required' => FALSE,
+      '#attributes' => array(
+        'placeholder' => t('No API Key yet')
+      ),
+    );
+
+    // If API Key value already set then Update Configuration.
+    if ( variable_get('siteapikey') != NULL ) {
+      $form['actions']['submit']['#value'] = t('Update Configuration');
+    }
+
+    // adding custom form submit in form.
+    $form['#submit'][] = '_node_to_json_settings_form_submit';
+
+  }
+  return system_settings_form($form);
+}
+
+/**
+ * Form submit for _node_to_json_settings_form_submit.
+ */
+function _node_to_json_settings_form_submit(&$form, &$form_state) {
+
+  // Set Drupal set meeage when field is saved.
+  if ($form_state['values']['siteapikey'] != NULL || $form_state['values']['siteapikey'] != '') {
+    
+    $message = t('Site API Key has been saved with that value');
+    drupal_set_message($message);
+  }
+  
+}
